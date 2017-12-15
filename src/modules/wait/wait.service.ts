@@ -23,7 +23,21 @@ export class SkyWaitService {
     private resolver: ComponentFactoryResolver,
     private appRef: ApplicationRef,
     private waitAdapter: SkyWaitPageAdapterService
-    ) {}
+  ) {
+    /*
+        Dynamic component creation needs to be done in a timeout to prevent ApplicationRef from
+        crashing when wait service is called in Angular lifecycle functions.
+    */
+    setTimeout(() => {
+      let factory = this.resolver.resolveComponentFactory(SkyWaitPageComponent);
+
+      this.waitAdapter.addPageWaitEl();
+
+      let cmpRef = this.appRef.bootstrap(factory);
+
+      SkyWaitService.waitComponent = cmpRef.instance;
+    });
+  }
 
   public beginBlockingPageWait() {
     this.beginPageWait(true);
@@ -66,27 +80,7 @@ export class SkyWaitService {
   }
 
   private beginPageWait(isBlocking: boolean) {
-    if (!SkyWaitService.waitComponent) {
-      /*
-          Dynamic component creation needs to be done in a timeout to prevent ApplicationRef from
-          crashing when wait service is called in Angular lifecycle functions.
-      */
-      setTimeout(() => {
-        let factory = this.resolver.resolveComponentFactory(SkyWaitPageComponent);
-
-        this.waitAdapter.addPageWaitEl();
-
-        let cmpRef = this.appRef.bootstrap(factory);
-
-        SkyWaitService.waitComponent = cmpRef.instance;
-
-        this.setWaitComponentProperties(isBlocking);
-      });
-
-    } else {
-      this.setWaitComponentProperties(isBlocking);
-    }
-
+    this.setWaitComponentProperties(isBlocking);
   }
 
   private endPageWait(isBlocking: boolean) {
